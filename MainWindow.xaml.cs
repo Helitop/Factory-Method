@@ -50,27 +50,34 @@ namespace Factory_Method
     }
 
     // ==========================================
-    // 2. ФАБРИЧНЫЕ МЕТОДЫ (Создатели)
+    // 2. АБСТРАКТНАЯ ФАБРИКА И КОНКРЕТНЫЕ ФАБРИКИ
     // ==========================================
-    public abstract class ShapeCreator
+    public interface IShapeAbstractFactory
     {
-        // Тот самый фабричный метод
-        public abstract IMyShape CreateShape(Brush color);
+        IMyShape CreateCircle();
+        IMyShape CreateSquare();
+        IMyShape CreateTriangle();
     }
 
-    public class CircleCreator : ShapeCreator
+    public class RedThemeFactory : IShapeAbstractFactory
     {
-        public override IMyShape CreateShape(Brush color) => new MyCircle(color);
+        public IMyShape CreateCircle() => new MyCircle(Brushes.Red);
+        public IMyShape CreateSquare() => new MySquare(Brushes.Red);
+        public IMyShape CreateTriangle() => new MyTriangle(Brushes.Red);
     }
 
-    public class SquareCreator : ShapeCreator
+    public class BlueThemeFactory : IShapeAbstractFactory
     {
-        public override IMyShape CreateShape(Brush color) => new MySquare(color);
+        public IMyShape CreateCircle() => new MyCircle(Brushes.Blue);
+        public IMyShape CreateSquare() => new MySquare(Brushes.Blue);
+        public IMyShape CreateTriangle() => new MyTriangle(Brushes.Blue);
     }
 
-    public class TriangleCreator : ShapeCreator
+    public class GreenThemeFactory : IShapeAbstractFactory
     {
-        public override IMyShape CreateShape(Brush color) => new MyTriangle(color);
+        public IMyShape CreateCircle() => new MyCircle(Brushes.Green);
+        public IMyShape CreateSquare() => new MySquare(Brushes.Green);
+        public IMyShape CreateTriangle() => new MyTriangle(Brushes.Green);
     }
 
     // ==========================================
@@ -78,19 +85,9 @@ namespace Factory_Method
     // ==========================================
     public partial class MainWindow : Window
     {
-        private List<ShapeCreator> _creators;
-
         public MainWindow()
         {
             InitializeComponent();
-
-            // Инициализируем список создателей
-            _creators = new List<ShapeCreator>
-            {
-                new CircleCreator(),
-                new SquareCreator(),
-                new TriangleCreator()
-            };
         }
 
         private void ColorSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -98,28 +95,29 @@ namespace Factory_Method
             if (ColorSelector.SelectedItem is ComboBoxItem selectedItem)
             {
                 string colorStr = selectedItem.Tag.ToString();
-                Brush brush = colorStr switch
+
+                // Выбираем нужную фабрику в зависимости от выбранной темы
+                IShapeAbstractFactory factory = colorStr switch
                 {
-                    "Red" => Brushes.Red,
-                    "Blue" => Brushes.Blue,
-                    "Green" => Brushes.Green,
-                    _ => Brushes.Black
+                    "Red" => new RedThemeFactory(),
+                    "Blue" => new BlueThemeFactory(),
+                    "Green" => new GreenThemeFactory(),
+                    _ => new RedThemeFactory()
                 };
 
-                GenerateShapes(brush);
+                GenerateShapes(factory);
             }
         }
 
-        private void GenerateShapes(Brush color)
+        private void GenerateShapes(IShapeAbstractFactory factory)
         {
             DrawingArea.Children.Clear(); // Удаляем старые фигуры
 
-            // Клиентский код перебирает создателей и вызывает фабричный метод
-            foreach (var creator in _creators)
-            {
-                IMyShape shape = creator.CreateShape(color);
-                DrawingArea.Children.Add(shape.GetElement());
-            }
+            // Теперь клиентский код работает только с интерфейсом Абстрактной Фабрики
+            // Ему не нужно знать про кисти (Brush) и конкретные цвета.
+            DrawingArea.Children.Add(factory.CreateCircle().GetElement());
+            DrawingArea.Children.Add(factory.CreateSquare().GetElement());
+            DrawingArea.Children.Add(factory.CreateTriangle().GetElement());
         }
     }
 }
